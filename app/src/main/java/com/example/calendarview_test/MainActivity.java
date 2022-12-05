@@ -39,8 +39,7 @@ import java.util.Date;
 import java.util.HashSet;
 
 
-public class MainActivity extends AppCompatActivity
-        implements OnDateSelectedListener, OnMonthChangedListener{
+public class MainActivity extends AppCompatActivity implements OnDateSelectedListener {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("EEE, d MMM yyyy");
     public String readDay = null;  //선택한 일자 읽어오는 변수
@@ -49,6 +48,8 @@ public class MainActivity extends AppCompatActivity
     public Button changeButton, deleteButton, saveButton; //수정, 삭제, 저장 버튼
     public TextView diaryTextView, contentTextView; //diaryTextView = 선택한 날짜를 표시해줌, contentTextView = 일정 내용(str변수의 값)을 저장하는 변수
     public EditText contextEditText; //입력 창 관련 변수
+
+    private EventDecorator eventDecorator;
 
     @BindView(R.id.calendarView)
     MaterialCalendarView widget;
@@ -64,17 +65,20 @@ public class MainActivity extends AppCompatActivity
 
         widget.setOnDateChangedListener(this);
         //widget.setOnDateLongClickListener(this);
-        widget.setOnMonthChangedListener(this);
+        //widget.setOnMonthChangedListener(this);
 
         //Setup initial text
-        textView.setText("No Selection");
+        textView.setText("날짜를 선택해주세요.");
 
-        MaterialCalendarView calendarView = findViewById(R.id.calendarView);
-        calendarView.setSelectedDate(CalendarDay.today());
+        //MaterialCalendarView calendarView = findViewById(R.id.calendarView);
+        //calendarView.setSelectedDate(CalendarDay.today());
 
-        calendarView.addDecorators(new SaturdayDecorator(), new SundayDecorator());
+        //calendarView.addDecorators(new SaturdayDecorator(), new SundayDecorator());
+        widget.setSelectedDate(CalendarDay.today());
+        widget.addDecorators(new SaturdayDecorator(), new SundayDecorator());
 
-        calendarView.addDecorator(new EventDecorator(Color.RED, Collections.singleton(CalendarDay.today())));
+        //오늘 날짜에 도트찍는 코드
+        //calendarView.addDecorator(new EventDecorator(Color.RED, Collections.singleton(CalendarDay.today())));
 
         //캘린더뷰 관련 변수들
 
@@ -85,6 +89,24 @@ public class MainActivity extends AppCompatActivity
         contentTextView = findViewById(R.id.contentTextView);
         //textView3 = findViewById(R.id.textView3);
         contextEditText = findViewById(R.id.contextEditText);
+
+    }
+
+    @Override
+    public void onDateSelected(
+            @NonNull MaterialCalendarView widget,
+            @NonNull CalendarDay date,
+            boolean selected) {
+        //textView.setText(selected ? FORMATTER.format(date.getDate()) : "날짜를 선택해주세요.");
+        //diaryTextView.setVisibility(View.VISIBLE);
+        saveButton.setVisibility(View.VISIBLE);
+        contextEditText.setVisibility(View.VISIBLE);
+        contentTextView.setVisibility(View.INVISIBLE);
+        changeButton.setVisibility(View.INVISIBLE);
+        deleteButton.setVisibility(View.INVISIBLE);
+        //diaryTextView.setText(String.format("%d / %d / %d", date.getYear(), date.getMonth(), date.getDay()));
+        contextEditText.setText("");
+        checkDay(date.getYear(), date.getMonth(), date.getDay());
 
         saveButton.setOnClickListener(new View.OnClickListener() //저장 버튼을 누르면 입력한 내용을 해당 일자에 저장하는 메소드 / 저장 버튼 클릭 이벤트 처리
         {
@@ -99,11 +121,57 @@ public class MainActivity extends AppCompatActivity
                 deleteButton.setVisibility(View.VISIBLE);
                 contextEditText.setVisibility(View.INVISIBLE);
                 contentTextView.setVisibility(View.VISIBLE);
-                widget.addDecorator(new EventDecorator(Color.RED, Collections.singleton(CalendarDay.today())));
+                eventDecorator = new EventDecorator(Color.RED, Collections.singleton(date));
+                widget.addDecorator(eventDecorator);
+                widget.invalidateDecorators();
 
             }
         });
+
+        changeButton.setOnClickListener(new View.OnClickListener()  //수정 버튼을 누르면 입력한 내용을 불러와 수정할 수 있게 해주는 메소드 / 수정 버튼 클릭 이벤트 처리
+        {
+            @Override
+            public void onClick(View view)
+            {
+                contextEditText.setVisibility(View.VISIBLE);
+                contentTextView.setVisibility(View.INVISIBLE);
+                contextEditText.setText(str);
+
+                saveButton.setVisibility(View.VISIBLE);
+                changeButton.setVisibility(View.INVISIBLE);
+                deleteButton.setVisibility(View.INVISIBLE);
+                contentTextView.setText(contextEditText.getText());
+            }
+
+        });
+
+        deleteButton.setOnClickListener(new View.OnClickListener() //삭제 버튼을 누르면 해당 일자에 저장된 일정을 삭제해주는 메소드 / 삭제 버튼 클릭 이벤트 처리
+        {
+            @Override
+            public void onClick(View view)
+            {
+                contentTextView.setVisibility(View.INVISIBLE);
+                contextEditText.setText("");
+                contextEditText.setVisibility(View.VISIBLE);
+                saveButton.setVisibility(View.VISIBLE);
+                changeButton.setVisibility(View.INVISIBLE);
+                deleteButton.setVisibility(View.INVISIBLE);
+                removeDiary(readDay);
+                //widget.removeDecorator(eventDecorator);
+            }
+        });
+
+        if (contentTextView.getText().length() == 0)
+        {
+            contentTextView.setVisibility(View.INVISIBLE);
+            diaryTextView.setVisibility(View.VISIBLE);
+            saveButton.setVisibility(View.VISIBLE);
+            changeButton.setVisibility(View.INVISIBLE);
+            deleteButton.setVisibility(View.INVISIBLE);
+            contextEditText.setVisibility(View.VISIBLE);
+        }
     }
+
 
     public void checkDay(int cYear, int cMonth, int cDay) //선택한 일자를 readDay 변수에 저장하는 메소드
     {
@@ -127,46 +195,6 @@ public class MainActivity extends AppCompatActivity
             saveButton.setVisibility(View.INVISIBLE);
             changeButton.setVisibility(View.VISIBLE);
             deleteButton.setVisibility(View.VISIBLE);
-
-            changeButton.setOnClickListener(new View.OnClickListener()  //수정 버튼을 누르면 입력한 내용을 불러와 수정할 수 있게 해주는 메소드 / 수정 버튼 클릭 이벤트 처리
-            {
-                @Override
-                public void onClick(View view)
-                {
-                    contextEditText.setVisibility(View.VISIBLE);
-                    contentTextView.setVisibility(View.INVISIBLE);
-                    contextEditText.setText(str);
-
-                    saveButton.setVisibility(View.VISIBLE);
-                    changeButton.setVisibility(View.INVISIBLE);
-                    deleteButton.setVisibility(View.INVISIBLE);
-                    contentTextView.setText(contextEditText.getText());
-                }
-
-            });
-            deleteButton.setOnClickListener(new View.OnClickListener() //삭제 버튼을 누르면 해당 일자에 저장된 일정을 삭제해주는 메소드 / 삭제 버튼 클릭 이벤트 처리
-            {
-                @Override
-                public void onClick(View view)
-                {
-                    contentTextView.setVisibility(View.INVISIBLE);
-                    contextEditText.setText("");
-                    contextEditText.setVisibility(View.VISIBLE);
-                    saveButton.setVisibility(View.VISIBLE);
-                    changeButton.setVisibility(View.INVISIBLE);
-                    deleteButton.setVisibility(View.INVISIBLE);
-                    removeDiary(readDay);
-                }
-            });
-            if (contentTextView.getText() == null)
-            {
-                contentTextView.setVisibility(View.INVISIBLE);
-                diaryTextView.setVisibility(View.VISIBLE);
-                saveButton.setVisibility(View.VISIBLE);
-                changeButton.setVisibility(View.INVISIBLE);
-                deleteButton.setVisibility(View.INVISIBLE);
-                contextEditText.setVisibility(View.VISIBLE);
-            }
 
         }
         catch (Exception e)
@@ -211,37 +239,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
-    @Override
-    public void onDateSelected(
-            @NonNull MaterialCalendarView widget,
-            @NonNull CalendarDay date,
-            boolean selected) {
-        textView.setText(selected ? FORMATTER.format(date.getDate()) : "No Selection");
-        diaryTextView.setVisibility(View.VISIBLE);
-        saveButton.setVisibility(View.VISIBLE);
-        contextEditText.setVisibility(View.VISIBLE);
-        contentTextView.setVisibility(View.INVISIBLE);
-        changeButton.setVisibility(View.INVISIBLE);
-        deleteButton.setVisibility(View.INVISIBLE);
-        diaryTextView.setText(String.format("%d / %d / %d", date.getYear(), date.getMonth(), date.getDay()));
-        contextEditText.setText("");
-        checkDay(date.getYear(), date.getMonth(), date.getDay());
-    }
-
-    /*
-    @Override
-    public void onDateLongClick(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date) {
-        final String text = String.format("%s is available", FORMATTER.format(date.getDate()));
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-        widget.addDecorator(new EventDecorator(Color.RED, Collections.singleton(date)));
-    }*/
-
-    @Override
-    public void onMonthChanged(MaterialCalendarView widget, CalendarDay date) {
-        //noinspection ConstantConditions
-        getSupportActionBar().setTitle(FORMATTER.format(date.getDate()));
-    }
 
     //캘린더에 도트 찍어주는 클래스
     class EventDecorator implements DayViewDecorator {
@@ -303,6 +300,23 @@ public class MainActivity extends AppCompatActivity
             view.addSpan(new ForegroundColorSpan(Color.RED));
         }
     }
+
+    /*
+    @Override
+    public void onDateLongClick(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date) {
+        final String text = String.format("%s is available", FORMATTER.format(date.getDate()));
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+        widget.addDecorator(new EventDecorator(Color.RED, Collections.singleton(date)));
+    }*/
+
+    /*
+    @Override
+    public void onMonthChanged(MaterialCalendarView widget, CalendarDay date) {
+        //noinspection ConstantConditions
+        getSupportActionBar().setTitle(FORMATTER.format(date.getDate()));
+    }
+     */
+
 }
 
 
