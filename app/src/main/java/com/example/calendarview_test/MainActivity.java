@@ -49,7 +49,8 @@ public class MainActivity extends AppCompatActivity implements OnDateSelectedLis
     public TextView diaryTextView, contentTextView; //diaryTextView = 선택한 날짜를 표시해줌, contentTextView = 일정 내용(str변수의 값)을 저장하는 변수
     public EditText contextEditText; //입력 창 관련 변수
 
-    private EventDecorator eventDecorator;
+    //데코 삭제를 위한 테스트 변수
+    //private EventDecorator eventDecorator;
 
     @BindView(R.id.calendarView)
     MaterialCalendarView widget;
@@ -121,8 +122,9 @@ public class MainActivity extends AppCompatActivity implements OnDateSelectedLis
                 deleteButton.setVisibility(View.VISIBLE);
                 contextEditText.setVisibility(View.INVISIBLE);
                 contentTextView.setVisibility(View.VISIBLE);
-                eventDecorator = new EventDecorator(Color.RED, Collections.singleton(date));
-                widget.addDecorator(eventDecorator);
+                //eventDecorator = new EventDecorator(Color.RED, Collections.singleton(date));
+                //widget.addDecorator(eventDecorator);
+                widget.addDecorator(new EventDecorator(Color.RED, Collections.singleton(date)));
                 widget.invalidateDecorators();
 
             }
